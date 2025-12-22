@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { API_URL } from '@/lib/utils';
 
 interface ReaderProps {
     chapterId: string;
@@ -38,7 +39,7 @@ export default function Reader({ chapterId, images, nextChapterId, prevChapterId
     useEffect(() => {
         const saveProgress = async () => {
             try {
-                await fetch('http://127.0.0.1:8000/history', {
+                await fetch(`${API_URL}/history`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
