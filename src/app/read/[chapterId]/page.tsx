@@ -24,7 +24,7 @@ export default function ReadPage({ params }: { params: Promise<{ chapterId: stri
     const [data, setData] = useState<ReaderData | null>(null);
     const [chapters, setChapters] = useState<Chapter[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showUI, setShowUI] = useState(true);
+    const [showUI, setShowUI] = useState(false);
     const router = useRouter();
     const [currentChapterId, setCurrentChapterId] = useState("");
 
@@ -44,9 +44,11 @@ export default function ReadPage({ params }: { params: Promise<{ chapterId: stri
     useEffect(() => {
         const loadChapter = async () => {
             const { chapterId } = await params;
-            setCurrentChapterId(chapterId);
+            const decodedId = decodeURIComponent(chapterId);
+            setCurrentChapterId(decodedId);
             setImagesLoadedCount(0);
             setIsRestoringScroll(true);
+            setShowUI(false);
 
             try {
                 // 1. Fetch Chapter Content
@@ -164,6 +166,29 @@ export default function ReadPage({ params }: { params: Promise<{ chapterId: stri
         };
     }, [data, currentChapterId, isRestoringScroll]);
 
+    // Auto-Navigate to Next Chapter on Bottom Scroll
+    useEffect(() => {
+        if (!data || !data.next_chapter_id || loading || isRestoringScroll) return;
+
+        const handleScroll = () => {
+            const scrollPosition = window.scrollY + window.innerHeight;
+            const bottomPosition = document.documentElement.scrollHeight;
+
+            // Check if we are near the bottom (within 50px)
+            if (scrollPosition >= bottomPosition - 50) {
+                // Debounce/Check if already navigating? 
+                // We rely on the router.push behavior but to be safe we can verify if we aren't already redirecting
+                // But simply calling it once is usually fine as long as we don't spam. 
+                // Let's rely on a flag if we want to be super safe, but Router is usually safe.
+                // Actually, let's reuse handleNavigation which sets loading=true
+                handleNavigation(data.next_chapter_id);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [data, loading, isRestoringScroll]);
+
     const handleNavigation = (id: string | null) => {
         if (id) {
             setLoading(true);
@@ -192,8 +217,9 @@ export default function ReadPage({ params }: { params: Promise<{ chapterId: stri
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
                     <div className="flex-1 min-w-0">
-                        <h1 className="text-white text-sm font-bold truncate">{data.manga_title}</h1>
-                        <p className="text-white/60 text-xs truncate">{currentChapterId}</p>
+                        <h1 className="text-white text-sm font-bold truncate">
+                            {data.manga_title} <span className="text-white/70 font-normal">Ch.{currentChapterId}</span>
+                        </h1>
                     </div>
                 </div>
             </div>

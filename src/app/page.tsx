@@ -1,15 +1,10 @@
 import MangaCard from "@/components/MangaCard";
-import Link from "next/link";
-import { ChevronRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Card, CardContent } from "@/components/ui/card";
+import Pagination from "@/components/Pagination";
 import { API_URL } from "@/lib/utils";
 
-async function getMangaList() {
+async function getMangaList(page: number) {
   try {
-    const res = await fetch(API_URL + "/manga", { cache: 'no-store' });
+    const res = await fetch(`${API_URL}/manga?page=${page}`, { cache: 'no-store' });
     if (!res.ok) return [];
     return res.json();
   } catch (error) {
@@ -18,14 +13,27 @@ async function getMangaList() {
   }
 }
 
-export default async function Home() {
-  const mangaList = await getMangaList();
-  const featuredManga = mangaList.length > 0 ? mangaList[0] : null;
+export default async function Home({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+  const params = await searchParams;
+  const currentPage = Number(params.page) || 1;
+  const mangaList = await getMangaList(currentPage);
+
+  // Sort by updated_at if available, otherwise rely on API order
+  // We assume the user wants the latest updates first. 
+  // If updated_at is a string ISO date:
+  const sortedList = [...mangaList]
+    .filter((m: any) => m.id)
+    .sort((a: any, b: any) => {
+      if (a.updated_at && b.updated_at) {
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      }
+      return 0;
+    });
 
   return (
     <div className="min-h-screen pb-24 space-y-6 px-4 py-6">
 
-      {/* Header / Tabs */}
+      {/* Header */}
       <div className="flex items-center justify-between pt-2 pb-4 px-1">
         <div className="flex items-center gap-1.5">
           <h1 className="text-2xl font-black italic tracking-tighter text-foreground font-sans">NOW</h1>
@@ -33,67 +41,10 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Featured Hero */}
-      {featuredManga && (
-        <Card className="relative overflow-hidden rounded-[2rem] border-0 shadow-2xl bg-card">
-          {/* Background */}
-          <div className="absolute inset-0 z-0">
-            <img
-              src={featuredManga.cover_url}
-              className="w-full h-full object-cover opacity-20 blur-xl scale-125 saturate-50"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/95 to-transparent" />
-          </div>
-
-          <CardContent className="relative z-10 flex gap-5 items-center p-5">
-            {/* Portrait Cover */}
-            <div className="w-28 aspect-[3/4] rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10 flex-shrink-0">
-              <img
-                src={featuredManga.cover_url}
-                alt={featuredManga.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            {/* Info & Button */}
-            <div className="flex-1 flex flex-col justify-center gap-4">
-              <div className="space-y-1">
-                <h2 className="text-xl font-extrabold leading-tight text-foreground line-clamp-2">
-                  {featuredManga.title}
-                </h2>
-                <p className="text-sm font-medium text-muted-foreground">
-                  {featuredManga.latest_chapter}
-                </p>
-              </div>
-
-              {/* Progress */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                  <span>Progress</span>
-                  <span className="text-primary">78%</span>
-                </div>
-                <Progress value={78} className="h-1.5 bg-secondary/50" indicatorClassName="bg-primary" />
-              </div>
-
-              <Button asChild className="w-full font-black uppercase tracking-wide rounded-xl shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground">
-                <Link href={`/manga/${featuredManga.id}`}>Continue Reading</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* For You List */}
-      <section className="space-y-4 pt-4 px-1">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-black italic tracking-wider text-foreground font-sans">FOR YOU</h2>
-          <Button variant="ghost" size="icon" asChild className="rounded-full hover:bg-secondary">
-            <Link href="/search"><ChevronRight className="h-5 w-5 text-muted-foreground" /></Link>
-          </Button>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          {mangaList.filter((m: any) => m.id).map((manga: any, index: number) => (
+      {/* Manga List */}
+      <section className="space-y-4 px-1">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+          {sortedList.map((manga: any, index: number) => (
             <MangaCard
               key={`${manga.id}-${index}`}
               id={manga.id}
@@ -104,7 +55,16 @@ export default async function Home() {
             />
           ))}
         </div>
+
+        {sortedList.length === 0 && (
+          <div className="text-center py-20 text-muted-foreground">
+            No manga found on this page.
+          </div>
+        )}
       </section>
+
+      {/* Pagination */}
+      <Pagination currentPage={currentPage} />
     </div>
   );
 }
