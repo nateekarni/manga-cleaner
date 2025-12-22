@@ -5,10 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
+import { API_URL } from "@/lib/utils";
 
 async function getMangaList() {
   try {
-    const res = await fetch('http://127.0.0.1:8000/manga', { cache: 'no-store' });
+    const res = await fetch(API_URL + "/manga", { cache: 'no-store' });
     if (!res.ok) return [];
     return res.json();
   } catch (error) {
