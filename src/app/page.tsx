@@ -31,14 +31,6 @@ export default async function Home() {
           <h1 className="text-2xl font-black italic tracking-tighter text-foreground font-sans">NOW</h1>
           <div className="h-2 w-2 rounded-full bg-primary mt-1.5"></div>
         </div>
-        <div className="flex gap-2">
-          <Badge variant="outline" className="border-primary text-primary rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider">
-            Reading
-          </Badge>
-          <Badge variant="ghost" className="text-muted-foreground hover:text-foreground rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider">
-            Finite
-          </Badge>
-        </div>
       </div>
 
       {/* Featured Hero */}
