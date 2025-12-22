@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { API_URL } from '@/lib/utils';
 
 interface ReaderData {
     id: string;
@@ -49,7 +50,7 @@ export default function ReadPage({ params }: { params: Promise<{ chapterId: stri
 
             try {
                 // 1. Fetch Chapter Content
-                const res = await fetch(`http://127.0.0.1:8000/chapter/${chapterId}`);
+                const res = await fetch(`${API_URL}/chapter/${chapterId}`);
                 if (res.ok) {
                     const json = await res.json();
 
@@ -57,7 +58,7 @@ export default function ReadPage({ params }: { params: Promise<{ chapterId: stri
                     let scrollPos = 0;
                     if (json.manga_id) {
                         try {
-                            const hRes = await fetch(`http://127.0.0.1:8000/history`);
+                            const hRes = await fetch(`${API_URL}/history`);
                             if (hRes.ok) {
                                 const historyList: any[] = await hRes.json();
                                 const entry = historyList.find((h: any) => h.manga_id === json.manga_id);
@@ -73,7 +74,7 @@ export default function ReadPage({ params }: { params: Promise<{ chapterId: stri
 
                     // Fetch chapters for dropdown
                     if (json.manga_id) {
-                        const mangaRes = await fetch(`http://127.0.0.1:8000/manga/${json.manga_id}`);
+                        const mangaRes = await fetch(`${API_URL}/manga/${json.manga_id}`);
                         if (mangaRes.ok) {
                             const mangaData = await mangaRes.json();
                             setChapters(mangaData.chapters);
@@ -132,7 +133,7 @@ export default function ReadPage({ params }: { params: Promise<{ chapterId: stri
         const saveHistory = async (scrollPos: number) => {
             if (scrollPos < 100) return; // Don't save top of page
             try {
-                await fetch('http://127.0.0.1:8000/history', {
+                await fetch(`${API_URL}/history`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

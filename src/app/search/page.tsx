@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Search as SearchIcon, Loader2 } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import MangaCard from '@/components/MangaCard';
+import { API_URL } from '@/lib/utils';
 
 interface Manga {
     id: string;
@@ -27,7 +28,7 @@ export default function SearchPage() {
         setLoading(true);
         setSearched(true);
         try {
-            const res = await fetch(`http://127.0.0.1:8000/search?q=${encodeURIComponent(query)}`);
+            const res = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}`);
             if (res.ok) {
                 const data = await res.json();
                 setResults(data);

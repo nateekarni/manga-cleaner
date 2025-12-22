@@ -7,6 +7,7 @@ import { ArrowLeft, Play, BookOpen } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { API_URL } from '@/lib/utils';
 
 interface MangaDetail {
     title: string;
@@ -31,14 +32,14 @@ export default function MangaDetailPage({ params }: { params: Promise<{ id: stri
             try {
                 const { id } = await params;
                 setMangaId(id);
-                const res = await fetch(`http://127.0.0.1:8000/manga/${id}`);
+                const res = await fetch(`${API_URL}/manga/${id}`);
                 if (res.ok) {
                     const data = await res.json();
                     setManga(data);
                 }
 
                 // Fetch History
-                const historyRes = await fetch(`http://127.0.0.1:8000/history/${id}`);
+                const historyRes = await fetch(`${API_URL}/history/${id}`);
                 if (historyRes.ok) {
                     const historyData = await historyRes.json();
                     if (historyData) setHistory(historyData);

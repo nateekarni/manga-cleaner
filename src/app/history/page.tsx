@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Loader2, BookOpen } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { API_URL, cn } from "@/lib/utils";
 
 interface HistoryItem {
     id: number;
@@ -30,14 +30,14 @@ export default function HistoryPage() {
         const fetchData = async () => {
             try {
                 // 1. Fetch History
-                const res = await fetch('http://127.0.0.1:8000/history');
+                const res = await fetch(`${API_URL}/history`);
                 if (!res.ok) throw new Error("Failed to fetch history");
                 const historyData: HistoryItem[] = await res.json();
 
                 // 2. Fetch fresh details for each manga to check for updates & get cover
                 const enriched = await Promise.all(historyData.map(async (item) => {
                     try {
-                        const mRes = await fetch(`http://127.0.0.1:8000/manga/${item.manga_id}`);
+                        const mRes = await fetch(`${API_URL}/manga/${item.manga_id}`);
                         if (!mRes.ok) return { ...item, new_chapters_count: 0, latest_chapter_title_online: "", fresh_cover: item.cover_url };
 
                         const manga = await mRes.json();
