@@ -20,13 +20,12 @@ export default function LoginPage() {
         setError('');
 
         try {
-            const formData = new FormData();
-            formData.append('username', username);
-            formData.append('password', password);
-
             const res = await fetch(`${API_URL}/token`, {
                 method: 'POST',
-                body: formData,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, password }),
             });
 
             if (!res.ok) {
