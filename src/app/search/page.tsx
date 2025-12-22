@@ -65,7 +65,15 @@ export default function SearchPage() {
                         <h2 className="font-bold text-lg">Results ({results.length})</h2>
                         <div className="grid gap-3">
                             {results.map((manga) => (
-                                <MangaCard key={manga.id} manga={manga} />
+                                /* แก้ไขตรงนี้: ส่งค่าแยกทีละตัวให้ตรงกับที่ MangaCard ต้องการ */
+                                <MangaCard
+                                    key={manga.id}
+                                    id={manga.id}
+                                    title={manga.title}
+                                    coverUrl={manga.cover_url}
+                                    latestChapter={manga.latest_chapter}
+                                    rating={manga.rating}
+                                />
                             ))}
                         </div>
                     </div>
