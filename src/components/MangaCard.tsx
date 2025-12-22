@@ -7,18 +7,20 @@ interface MangaCardProps {
     coverUrl: string;
     latestChapter: string;
     rating: string;
+    source?: string;
 }
 
-export default function MangaCard({ id, title, coverUrl, latestChapter, rating }: MangaCardProps) {
+export default function MangaCard({ id, title, coverUrl, latestChapter, rating, source = "up-manga" }: MangaCardProps) {
     if (!id) return null;
 
     return (
-        <Link href={`/manga/${id}`} className="flex flex-col gap-2 group">
+        <Link href={`/manga/${id}?source=${source}`} className="flex flex-col gap-2 group">
             {/* Cover Image */}
             <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl shadow-md border border-white/5 bg-secondary/20">
                 <img
                     src={coverUrl}
                     alt={title}
+                    referrerPolicy="no-referrer"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                     loading="lazy"
                 />

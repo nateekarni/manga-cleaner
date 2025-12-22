@@ -1,70 +1,83 @@
-import MangaCard from "@/components/MangaCard";
-import Pagination from "@/components/Pagination";
-import { API_URL } from "@/lib/utils";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import MangaList, { RawManga } from "@/components/MangaList";
 
-async function getMangaList(page: number) {
+export const dynamic = 'force-dynamic';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+async function getMangaList(source: string): Promise<RawManga[]> {
+  const url = `${API_URL}/manga?source=${source}`;
+  console.log(`[Server] Fetching URL: ${url}`);
   try {
-    const res = await fetch(`${API_URL}/manga?page=${page}`, { cache: 'no-store' });
-    if (!res.ok) return [];
-    return res.json();
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) {
+      console.error(`[Server] Fetch failed for ${source}: ${res.status}`);
+      return [];
+    }
+    const data = await res.json();
+    console.log(`[Server] Fetched ${data.length} items for ${source}`);
+    if (data.length > 0) {
+      console.log(`[Server] First title for ${source}:`, data[0].title);
+    }
+    return data;
   } catch (error) {
-    console.error(error);
+    console.error(`[Server] Error fetching ${source}:`, error);
     return [];
   }
 }
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+export default async function Home({ searchParams }: { searchParams: Promise<{ source?: string }> }) {
   const params = await searchParams;
-  const currentPage = Number(params.page) || 1;
-  const mangaList = await getMangaList(currentPage);
+  const currentSource = params.source || "up-manga";
 
-  // Sort by updated_at if available, otherwise rely on API order
-  // We assume the user wants the latest updates first. 
-  // If updated_at is a string ISO date:
-  const sortedList = [...mangaList]
-    .filter((m: any) => m.id)
-    .sort((a: any, b: any) => {
-      if (a.updated_at && b.updated_at) {
-        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-      }
-      return 0;
-    });
+  // We'll trust the client component to fetch data to ensure consistency and avoid SSR/Env mismatches
+  // appearing as blank pages.
+  const mangaList: RawManga[] = [];
+
+  // Sources definition
+  const sources = [
+    { id: "up-manga", label: "Up-Manga" },
+    { id: "reapertrans", label: "ReaperTrans" },
+    { id: "slow-manga", label: "Slow-Manga" },
+  ];
 
   return (
-    <div className="min-h-screen pb-24 space-y-6 px-4 py-6">
+    <div key={currentSource} className="min-h-screen pb-24 space-y-6 px-4 pt-0">
 
-      {/* Header */}
-      <div className="flex items-center justify-between pt-2 pb-4 px-1">
-        <div className="flex items-center gap-1.5">
-          <h1 className="text-2xl font-black italic tracking-tighter text-foreground font-sans">NOW</h1>
-          <div className="h-2 w-2 rounded-full bg-primary mt-1.5"></div>
+      {/* Header & Tabs */}
+      <div className="sticky top-0 z-50 space-y-4 bg-background/95 backdrop-blur-xl pt-6 pb-4 -mx-4 px-4 border-b border-white/5 shadow-2xl shadow-black/50">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-2xl font-black italic tracking-tighter text-foreground font-sans">NOW</h1>
+            <div className="h-2 w-2 rounded-full bg-primary mt-1.5"></div>
+          </div>
+          <div className="text-[10px] text-muted-foreground font-mono">
+            {currentSource} ({mangaList.length})
+          </div>
+        </div>
+
+        {/* Source Tabs */}
+        <div className="flex p-1 bg-secondary/30 rounded-xl backdrop-blur-sm border border-white/5">
+          {sources.map(source => (
+            <a
+              key={source.id}
+              href={`/?source=${source.id}`}
+              className={cn(
+                "flex-1 text-center py-2 text-sm font-bold rounded-lg transition-all",
+                currentSource === source.id
+                  ? "bg-primary text-primary-foreground shadow-lg"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+              )}
+            >
+              {source.label}
+            </a>
+          ))}
         </div>
       </div>
 
-      {/* Manga List */}
-      <section className="space-y-4 px-1">
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-          {sortedList.map((manga: any, index: number) => (
-            <MangaCard
-              key={`${manga.id}-${index}`}
-              id={manga.id}
-              title={manga.title}
-              coverUrl={manga.cover_url}
-              latestChapter={manga.latest_chapter}
-              rating={manga.rating}
-            />
-          ))}
-        </div>
+      {/* Manga Grid with Pagination */}
+      <MangaList initialItems={mangaList} source={currentSource} />
 
-        {sortedList.length === 0 && (
-          <div className="text-center py-20 text-muted-foreground">
-            No manga found on this page.
-          </div>
-        )}
-      </section>
-
-      {/* Pagination */}
-      <Pagination currentPage={currentPage} />
     </div>
   );
 }

@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
 }
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL;
+export const API_URL = "http://localhost:8000";
 
 export function getApiUrl(path: string) {
     if (path.startsWith("/")) {

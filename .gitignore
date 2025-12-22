@@ -26,11 +26,33 @@ pnpm-debug.log*
 # Local Env Files (สำคัญมาก ห้ามเอาขึ้น git)
 .env*.local
 .env
+DEPLOYMENT_GUIDE.md
 
 # Vercel
 .vercel
 
 # Backend
 /backend
+/.venv
+backend_changes_log.md
+DEPLOYMENT.md
+manga.db
 
 manga-cleaner.code-workspace
+
+# Editors
+.vscode
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# TypeScript
+*.tsbuildinfo
