@@ -21,11 +21,31 @@ interface EnrichedHistory extends HistoryItem {
     new_chapters_count: number;
     latest_chapter_title_online: string;
     fresh_cover: string;
+    total_chapters: number;
 }
 
 export default function HistoryPage() {
     const [history, setHistory] = useState<EnrichedHistory[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const formatChapterTitle = (title: string) => {
+        try {
+            const decoded = decodeURIComponent(title);
+            // Match the number at the end, often preceded by -, _, or space
+            const match = decoded.match(/[-_ ]?(\d+(\.\d+)?)$/);
+
+            if (match) {
+                return `ตอนที่ ${match[1]}`;
+            }
+            // Fallback: search for any number sequence if exact end match fails
+            const anyNum = decoded.match(/(\d+(\.\d+)?)/);
+            if (anyNum) return `ตอนที่ ${anyNum[1]}`;
+
+            return decoded;
+        } catch (e) {
+            return title;
+        }
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -40,7 +60,13 @@ export default function HistoryPage() {
                     const source = item.source || "up-manga";
                     try {
                         const mRes = await fetch(`${API_URL}/manga/${item.manga_id}?source=${source}`);
-                        if (!mRes.ok) return { ...item, new_chapters_count: 0, latest_chapter_title_online: "", fresh_cover: item.cover_url };
+                        if (!mRes.ok) return {
+                            ...item,
+                            new_chapters_count: 0,
+                            latest_chapter_title_online: "",
+                            fresh_cover: item.cover_url,
+                            total_chapters: 0
+                        };
 
                         const manga = await mRes.json();
 
@@ -50,15 +76,13 @@ export default function HistoryPage() {
                         // Calculate new chapters
                         // Assuming manga.chapters is ordered Newest -> Oldest
                         const chapters = manga.chapters || [];
+                        const totalChapters = chapters.length;
                         const readIndex = chapters.findIndex((c: any) => c.id === item.chapter_id);
 
                         let newCount = 0;
                         if (readIndex > 0) {
                             newCount = readIndex;
                         } else if (readIndex === -1 && chapters.length > 0) {
-                            // Read chapter not found? Maybe ID changed or it's very old.
-                            // For safety, assume 0 or handle logic differently. 
-                            // Let's assume 0 to avoid false positives unless we are sure.
                             newCount = 0;
                         }
 
@@ -66,10 +90,17 @@ export default function HistoryPage() {
                             ...item,
                             new_chapters_count: newCount,
                             latest_chapter_title_online: chapters[0]?.title || "",
-                            fresh_cover: cover
+                            fresh_cover: cover,
+                            total_chapters: totalChapters
                         };
                     } catch (e) {
-                        return { ...item, new_chapters_count: 0, latest_chapter_title_online: "", fresh_cover: item.cover_url };
+                        return {
+                            ...item,
+                            new_chapters_count: 0,
+                            latest_chapter_title_online: "",
+                            fresh_cover: item.cover_url,
+                            total_chapters: 0
+                        };
                     }
                 }));
 
@@ -116,7 +147,9 @@ export default function HistoryPage() {
                             <div className="w-16 aspect-[3/4] flex-shrink-0 bg-secondary/50 rounded-lg overflow-hidden relative">
                                 {item.fresh_cover && (
                                     <img
-                                        src={item.fresh_cover}
+                                        src={(item.source === 'reapertrans' || item.source === 'slow-manga')
+                                            ? `${API_URL}/proxy-image?url=${encodeURIComponent(item.fresh_cover)}&source=${item.source}`
+                                            : item.fresh_cover}
                                         alt={item.manga_title}
                                         className="w-full h-full object-cover"
                                     />
@@ -128,20 +161,14 @@ export default function HistoryPage() {
                                     {item.manga_title}
                                 </h3>
                                 <p className="text-xs text-muted-foreground truncate">
-                                    Last read: <span className="text-foreground">{item.chapter_title}</span>
+                                    อ่านล่าสุด: <span className="text-foreground font-medium">{formatChapterTitle(item.chapter_title)}</span>
                                 </p>
                                 <p className="text-[10px] text-muted-foreground/60">
-                                    {new Date(item.last_read_at).toLocaleDateString()}
+                                    จากทั้งหมด {item.total_chapters} ตอน
                                 </p>
                             </div>
 
-                            {item.new_chapters_count > 0 && (
-                                <div className="absolute top-3 right-3">
-                                    <Badge variant="destructive" className="animate-pulse shadow-lg shadow-red-500/20">
-                                        +{item.new_chapters_count}
-                                    </Badge>
-                                </div>
-                            )}
+
                         </Link>
                     ))}
                 </div>

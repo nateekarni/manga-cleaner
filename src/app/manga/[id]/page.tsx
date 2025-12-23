@@ -90,7 +90,13 @@ export default function MangaDetailPage() {
                 {/* Hero Section */}
                 <div className="flex flex-col items-center gap-6">
                     <div className="w-40 aspect-[3/4] rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10 relative">
-                        <img src={manga.cover_url} alt={manga.title} className="w-full h-full object-cover" />
+                        <img
+                            src={(source === 'reapertrans' || source === 'slow-manga')
+                                ? `${API_URL}/proxy-image?url=${encodeURIComponent(manga.cover_url)}&source=${source}`
+                                : manga.cover_url}
+                            alt={manga.title}
+                            className="w-full h-full object-cover"
+                        />
                     </div>
 
                     <div className="text-center space-y-2 max-w-sm">

@@ -202,7 +202,8 @@ export default function ReadPage() {
     const handleNavigation = (id: string | null) => {
         if (id) {
             setLoading(true);
-            router.push(`/read/${id}?source=${source}`);
+            // Use replace to prevent history pollution when reading consecutively
+            router.replace(`/read/${id}?source=${source}`);
         }
     };
 
@@ -223,7 +224,7 @@ export default function ReadPage() {
             {/* Top Bar */}
             <div className={`fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md transition-transform duration-300 ${showUI ? 'translate-y-0' : '-translate-y-full'}`}>
                 <div className="flex items-center px-4 h-16 gap-4">
-                    <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" onClick={() => router.push(`/manga/${data.manga_id}?source=${source}`)}>
+                    <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" onClick={() => router.back()}>
                         <ArrowLeft className="h-6 w-6" />
                     </Button>
                     <div className="flex-1 min-w-0">
@@ -252,16 +253,29 @@ export default function ReadPage() {
                     </div>
                 )}
 
-                {data.images.map((src, index) => (
-                    <img
-                        key={index}
-                        src={src}
-                        alt={`Page ${index + 1}`}
-                        className="w-full h-auto block"
-                        loading="eager"
-                        onLoad={() => setImagesLoadedCount(prev => prev + 1)}
-                    />
-                ))}
+                {data.images.map((src, index) => {
+                    // Use proxy for sources with hotlink protection
+                    let finalSrc = src;
+                    if (source === 'reapertrans' || source === 'slow-manga') {
+                        finalSrc = `${API_URL}/proxy-image?url=${encodeURIComponent(src)}&source=${source}`;
+                    }
+
+                    return (
+                        <img
+                            key={index}
+                            src={finalSrc}
+                            alt={`Page ${index + 1}`}
+                            className="w-full h-auto block"
+                            loading="eager"
+                            onLoad={() => setImagesLoadedCount(prev => prev + 1)}
+                            onError={(e) => {
+                                // Fallback if proxy fails or if we want to try direct
+                                console.error("Image load failed", finalSrc);
+                                // Optional: e.currentTarget.src = src; // Try direct as last resort
+                            }}
+                        />
+                    );
+                })}
 
                 {/* End of Chapter Navigation Area */}
                 <div className="p-8 flex flex-col items-center gap-4 text-white/50">
